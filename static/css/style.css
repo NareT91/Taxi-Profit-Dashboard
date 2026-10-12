@@ -1,0 +1,258 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+body {
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+    color: white;
+}
+
+
+/* Background */
+
+.background {
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background:
+        linear-gradient(
+            rgba(5, 10, 20, 0.75),
+            rgba(5, 10, 20, 0.85)
+        ),
+        url("https://images.unsplash.com/photo-1549317661-bd32c8ce0db2");
+
+    background-size: cover;
+    background-position: center;
+}
+
+
+/* Login Card */
+
+.login-container {
+
+    width: 420px;
+
+    padding: 45px;
+
+    border-radius: 25px;
+
+    background: rgba(255, 255, 255, 0.10);
+
+    border: 1px solid rgba(255, 255, 255, 0.25);
+
+    backdrop-filter: blur(18px);
+
+    -webkit-backdrop-filter: blur(18px);
+
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.5);
+
+    text-align: center;
+}
+
+
+/* Taxi Logo */
+
+.logo {
+
+    width: 75px;
+    height: 75px;
+
+    margin: 0 auto 20px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.15);
+
+    font-size: 38px;
+
+    box-shadow:
+        0 0 25px rgba(255, 193, 7, 0.35);
+}
+
+
+/* Heading */
+
+h1 {
+
+    font-size: 30px;
+
+    font-weight: 600;
+
+    margin-bottom: 8px;
+}
+
+
+.subtitle {
+
+    font-size: 14px;
+
+    color: rgba(255, 255, 255, 0.70);
+
+    margin-bottom: 35px;
+}
+
+
+/* Input fields */
+
+.input-group {
+
+    text-align: left;
+
+    margin-bottom: 20px;
+}
+
+
+.input-group label {
+
+    display: block;
+
+    font-size: 13px;
+
+    margin-bottom: 8px;
+
+    color: rgba(255, 255, 255, 0.85);
+}
+
+
+.input-group input {
+
+    width: 100%;
+
+    padding: 14px 16px;
+
+    border-radius: 12px;
+
+    border: 1px solid rgba(255, 255, 255, 0.20);
+
+    background: rgba(255, 255, 255, 0.08);
+
+    color: white;
+
+    outline: none;
+
+    font-family: 'Poppins', sans-serif;
+
+    transition: 0.3s;
+}
+
+
+.input-group input::placeholder {
+
+    color: rgba(255, 255, 255, 0.45);
+}
+
+
+.input-group input:focus {
+
+    border-color: #f5c542;
+
+    box-shadow:
+        0 0 15px rgba(245, 197, 66, 0.25);
+}
+
+
+/* Login button */
+
+button {
+
+    width: 100%;
+
+    padding: 14px;
+
+    margin-top: 10px;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background: linear-gradient(
+        135deg,
+        #f5c542,
+        #ff9f1c
+    );
+
+    color: #111;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    font-family: 'Poppins', sans-serif;
+
+    cursor: pointer;
+
+    transition: 0.3s;
+
+    box-shadow:
+        0 8px 20px rgba(255, 159, 28, 0.25);
+}
+
+
+button:hover {
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 12px 25px rgba(255, 159, 28, 0.40);
+}
+
+
+/* Register */
+
+.register-text {
+
+    margin-top: 25px;
+
+    font-size: 13px;
+
+    color: rgba(255, 255, 255, 0.65);
+}
+
+
+.register-text a {
+
+    color: #f5c542;
+
+    text-decoration: none;
+
+    font-weight: 500;
+}
+
+
+.register-text a:hover {
+
+    text-decoration: underline;
+}
+
+
+/* Mobile */
+
+@media (max-width: 500px) {
+
+    .login-container {
+
+        width: 90%;
+
+        padding: 35px 25px;
+    }
+
+    h1 {
+
+        font-size: 25px;
+    }
+}

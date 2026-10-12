@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Taxi Management System</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="background">
+
+        <div class="login-container">
+
+            <div class="logo">
+                🚕
+            </div>
+
+            <h1>Taxi Management</h1>
+
+            <p class="subtitle">
+                Profit & Driver Performance System
+            </p>
+
+            {% with messages = get_flashed_messages() %}
+    {% for message in messages %}
+        <p class="message">{{ message }}</p>
+    {% endfor %}
+{% endwith %}
+
+
+            <form action="{{ url_for('login') }}" method="POST">
+
+                <div class="input-group">
+                    <label>Email Address</label>
+                   <input type="email" name="email" placeholder="Enter your email" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                   <input type="password" name="password" placeholder="Enter your password" required>
+                </div>
+
+                <button type="submit">
+                    Login
+                </button>
+
+            </form>
+
+            <p class="register-text">
+                Don't have an account?
+                <a href="{{ url_for('register') }}">Create Account</a>
+            </p>
+
+
+          
+        
+
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

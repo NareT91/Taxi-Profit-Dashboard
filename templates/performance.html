@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Performance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page {
+            max-width: 1100px;
+            margin: 35px auto;
+            padding: 24px;
+            background: white;
+            color: #26364a;
+            border-radius: 12px;
+        }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f3f6fa; }
+        .status { font-weight: bold; }
+        a { color: #26364a; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <h1>Taxi Performance Report</h1>
+        <p>Welcome, {{ fullname }}. Compare actual profit with monthly targets.</p>
+
+        <p>
+            <a href="{{ url_for('set_target') }}">Set or Update Target</a> |
+            <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+        </p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Taxi</th>
+                        <th>Actual Profit</th>
+                        <th>Target</th>
+                        <th>Achievement</th>
+                        <th>Rating</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in performance_data %}
+                    <tr>
+                        <td>{{ item.month }}</td>
+                        <td>{{ item.taxi }}</td>
+                        <td>R {{ "{:,.2f}".format(item.profit) }}</td>
+                        <td>
+                            {% if item.target is not none %}
+                                R {{ "{:,.2f}".format(item.target) }}
+                            {% else %}
+                                Not set
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.percentage is not none %}
+                                {{ item.percentage }}%
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td class="status">{{ item.status }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6">
+                            No taxi records yet. Add a taxi record to begin.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

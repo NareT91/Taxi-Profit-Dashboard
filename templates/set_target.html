@@ -1,0 +1,77 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Monthly Target</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .form-card {
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 28px;
+            background: white;
+            color: #26364a;
+            border-radius: 12px;
+        }
+        label { display: block; margin-top: 16px; }
+        input, select {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 11px;
+            margin-top: 6px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 22px;
+            background: #e6a23c;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .message { color: #b42318; }
+    </style>
+</head>
+<body>
+    <div class="form-card">
+        <h1>Set Monthly Target</h1>
+        <p>Choose a taxi and set its expected profit.</p>
+
+        {% with messages = get_flashed_messages() %}
+            {% for message in messages %}
+                <p class="message">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('set_target') }}">
+            <label for="taxi_name">Taxi</label>
+            <select id="taxi_name" name="taxi_name" required>
+                <option value="">Select taxi</option>
+                <option value="Taxi 1">Taxi 1</option>
+                <option value="Taxi 2">Taxi 2</option>
+            </select>
+
+            <label for="month">Month</label>
+            <select id="month" name="month" required>
+                <option value="">Select month</option>
+                {% for month in months %}
+                    <option value="{{ month }}">{{ month }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="target">Profit target (R)</label>
+            <input type="number" id="target" name="target"
+                   min="0.01" step="0.01" required>
+
+            <button type="submit">Save Target</button>
+        </form>
+
+        <p><a href="{{ url_for('dashboard') }}">Back to Dashboard</a></p>
+        <p><a href="{{ url_for('performance') }}">View Performance</a></p>
+    </div>
+</body>
+</html>
