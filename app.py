@@ -1,22 +1,38 @@
 
+import os
+import psycopg
+from psycopg.rows import dict_row
+from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from database import create_database
-from taxi_data import get_dashboard_data
+
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "taxi_project_demo_secret_key"
+app.secret_key = os.getenv("SECRET_KEY", "dev-only-change-me")
 
-DATABASE = "taxi_management.db"
+
+def get_db_connection():
+    database_url = os.getenv("DATABASE_URL")
+
+    if not database_url:
+        raise RuntimeError("DATABASE_URL is missing from .env")
+
+    return psycopg.connect(
+        database_url,
+        row_factory=dict_row
+    )
+
 
 create_database()
 
 
-def get_db_connection():
-    connection = sqlite3.connect(DATABASE)
-    connection.row_factory = sqlite3.Row
-    return connection
+MONTHS = [
+    "January", "February", "March", "April",
+    "May", "June", "July", "August",
+    "September", "October", "November", "December"
+]
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -25,11 +41,11 @@ def login():
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
 
-        connection = get_db_connection()
-        user = connection.execute(
-            "SELECT * FROM users WHERE email = ?", (email,)
-        ).fetchone()
-        connection.close()
+        with get_db_connection() as connection:
+            user = connection.execute(
+                "SELECT * FROM users WHERE email = %s",
+                (email,)
+            ).fetchone()
 
         if user and check_password_hash(user["password_hash"], password):
             session["user_id"] = user["id"]
@@ -61,29 +77,24 @@ def register():
             flash("Password must be at least 8 characters.")
             return redirect(url_for("register"))
 
-        connection = get_db_connection()
-
         try:
-            connection.execute(
-                """
-                INSERT INTO users (fullname, email, password_hash)
-                VALUES (?, ?, ?)
-                """,
-                (fullname, email, generate_password_hash(password))
-            )
-            connection.commit()
+            with get_db_connection() as connection:
+                connection.execute(
+                    """
+                    INSERT INTO users (fullname, email, password_hash)
+                    VALUES (%s, %s, %s)
+                    """,
+                    (fullname, email, generate_password_hash(password))
+                )
+
             flash("Account created successfully. Please log in.")
             return redirect(url_for("login"))
 
-        except sqlite3.IntegrityError:
+        except psycopg.errors.UniqueViolation:
             flash("This email address is already registered.")
             return redirect(url_for("register"))
 
-        finally:
-            connection.close()
-
     return render_template("register.html")
-
 
 
 @app.route("/dashboard")
@@ -91,29 +102,20 @@ def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    connection = get_db_connection()
-
-    records = connection.execute(
-        """
-        SELECT
-            month,
-            taxi_name,
-            SUM(income) AS income,
-            SUM(expenses) AS expenses
-        FROM taxi_records
-        WHERE user_id = ?
-        GROUP BY month, taxi_name
-        """,
-        (session["user_id"],)
-    ).fetchall()
-
-    connection.close()
-
-    month_order = [
-        "January", "February", "March", "April",
-        "May", "June", "July", "August",
-        "September", "October", "November", "December"
-    ]
+    with get_db_connection() as connection:
+        records = connection.execute(
+            """
+            SELECT
+                month,
+                taxi_name,
+                SUM(income) AS income,
+                SUM(expenses) AS expenses
+            FROM taxi_records
+            WHERE user_id = %s
+            GROUP BY month, taxi_name
+            """,
+            (session["user_id"],)
+        ).fetchall()
 
     monthly_summary = {}
 
@@ -151,7 +153,7 @@ def dashboard():
 
     monthly_data = [
         monthly_summary[month]
-        for month in month_order
+        for month in MONTHS
         if month in monthly_summary
     ]
 
@@ -173,7 +175,6 @@ def dashboard():
 def logout():
     session.clear()
     return redirect(url_for("login"))
-
 
 
 @app.route("/add_record", methods=["GET", "POST"])
@@ -200,39 +201,24 @@ def add_record():
             flash("Please select a valid taxi.")
             return redirect(url_for("add_record"))
 
-        valid_months = [
-            "January", "February", "March", "April",
-            "May", "June", "July", "August",
-            "September", "October", "November", "December"
-        ]
-
-        if month not in valid_months:
+        if month not in MONTHS:
             flash("Please select a valid month.")
             return redirect(url_for("add_record"))
 
-        connection = get_db_connection()
-        connection.execute(
-            """
-            INSERT INTO taxi_records
-                (user_id, taxi_name, month, income, expenses)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (session["user_id"], taxi_name, month, income, expenses)
-        )
-        connection.commit()
-        connection.close()
+        with get_db_connection() as connection:
+            connection.execute(
+                """
+                INSERT INTO taxi_records
+                    (user_id, taxi_name, month, income, expenses)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (session["user_id"], taxi_name, month, income, expenses)
+            )
 
         flash("Taxi record saved successfully.")
         return redirect(url_for("dashboard"))
 
     return render_template("add_record.html")
-
-
-MONTHS = [
-    "January", "February", "March", "April",
-    "May", "June", "July", "August",
-    "September", "October", "November", "December"
-]
 
 
 @app.route("/set_target", methods=["GET", "POST"])
@@ -246,8 +232,10 @@ def set_target():
 
         try:
             target = float(request.form.get("target", ""))
+
             if target <= 0:
                 raise ValueError
+
         except (ValueError, TypeError):
             flash("Enter a target greater than zero.")
             return redirect(url_for("set_target"))
@@ -256,53 +244,51 @@ def set_target():
             flash("Please select a valid taxi and month.")
             return redirect(url_for("set_target"))
 
-        connection = get_db_connection()
-        connection.execute(
-            """
-            INSERT INTO taxi_targets (user_id, taxi_name, month, target)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(user_id, taxi_name, month)
-            DO UPDATE SET target = excluded.target
-            """,
-            (session["user_id"], taxi_name, month, target)
-        )
-        connection.commit()
-        connection.close()
+        with get_db_connection() as connection:
+            connection.execute(
+                """
+                INSERT INTO taxi_targets (user_id, taxi_name, month, target)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (user_id, taxi_name, month)
+                DO UPDATE SET target = EXCLUDED.target
+                """,
+                (session["user_id"], taxi_name, month, target)
+            )
 
         flash("Monthly target saved successfully.")
         return redirect(url_for("performance"))
 
     return render_template("set_target.html", months=MONTHS)
 
+
 @app.route("/performance")
 def performance():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    connection = get_db_connection()
+    with get_db_connection() as connection:
+        records = connection.execute(
+            """
+            SELECT
+                month,
+                taxi_name,
+                SUM(income) AS income,
+                SUM(expenses) AS expenses
+            FROM taxi_records
+            WHERE user_id = %s
+            GROUP BY month, taxi_name
+            """,
+            (session["user_id"],)
+        ).fetchall()
 
-    records = connection.execute(
-        """
-        SELECT month, taxi_name,
-               SUM(income) AS income,
-               SUM(expenses) AS expenses
-        FROM taxi_records
-        WHERE user_id = ?
-        GROUP BY month, taxi_name
-        """,
-        (session["user_id"],)
-    ).fetchall()
-
-    targets = connection.execute(
-        """
-        SELECT month, taxi_name, target
-        FROM taxi_targets
-        WHERE user_id = ?
-        """,
-        (session["user_id"],)
-    ).fetchall()
-
-    connection.close()
+        targets = connection.execute(
+            """
+            SELECT month, taxi_name, target
+            FROM taxi_targets
+            WHERE user_id = %s
+            """,
+            (session["user_id"],)
+        ).fetchall()
 
     target_lookup = {
         (row["month"], row["taxi_name"]): row["target"]
@@ -321,7 +307,7 @@ def performance():
             percentage = None
             status = "Target not set"
         else:
-            percentage = round((profit / target) * 100, 1)
+            percentage = round((profit / float(target)) * 100, 1)
 
             if percentage >= 110:
                 status = "Excellent"

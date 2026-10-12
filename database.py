@@ -1,55 +1,55 @@
 
-import sqlite3
 import os
+import psycopg
+from dotenv import load_dotenv
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE = os.path.join(BASE_DIR, "taxi_management.db")
+load_dotenv()
 
 
 def create_database():
-    connection = sqlite3.connect(DATABASE)
+    database_url = os.getenv("DATABASE_URL")
 
-    connection.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            fullname TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            password_hash TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
+    if not database_url:
+        raise RuntimeError("DATABASE_URL is missing from .env")
 
-    connection.execute("""
-        CREATE TABLE IF NOT EXISTS taxi_records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            taxi_name TEXT NOT NULL,
-            month TEXT NOT NULL,
-            income REAL NOT NULL,
-            expenses REAL NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users (id)
-        )
-    """)
+    with psycopg.connect(database_url) as connection:
+        with connection.cursor() as cursor:
 
-    connection.execute("""
-        CREATE TABLE IF NOT EXISTS taxi_targets (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            taxi_name TEXT NOT NULL,
-            month TEXT NOT NULL,
-            target REAL NOT NULL,
-            UNIQUE (user_id, taxi_name, month),
-            FOREIGN KEY (user_id) REFERENCES users (id)
-        )
-    """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id BIGSERIAL PRIMARY KEY,
+                    fullname TEXT NOT NULL,
+                    email TEXT NOT NULL UNIQUE,
+                    password_hash TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
 
-    connection.commit()
-    connection.close()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS taxi_records (
+                    id BIGSERIAL PRIMARY KEY,
+                    user_id BIGINT NOT NULL REFERENCES users(id),
+                    taxi_name TEXT NOT NULL,
+                    month TEXT NOT NULL,
+                    income DOUBLE PRECISION NOT NULL,
+                    expenses DOUBLE PRECISION NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS taxi_targets (
+                    id BIGSERIAL PRIMARY KEY,
+                    user_id BIGINT NOT NULL REFERENCES users(id),
+                    taxi_name TEXT NOT NULL,
+                    month TEXT NOT NULL,
+                    target DOUBLE PRECISION NOT NULL,
+                    UNIQUE (user_id, taxi_name, month)
+                )
+            """)
+
+    print("Neon database and tables created successfully!")
 
 
 if __name__ == "__main__":
     create_database()
-    print("Database and tables created successfully!")
-
-
